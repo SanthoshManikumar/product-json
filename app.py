@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
-
+import ssl
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 CORS(app)
