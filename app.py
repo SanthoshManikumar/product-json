@@ -1,15 +1,17 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_pymongo import PyMongo
+from pymongo import MongoClient
 from bson import ObjectId
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 CORS(app)
 
-# Initialize PyMongo with connection URI
-app.config["MONGO_URI"] = 'mongodb+srv://santhoshsmothy:mongodb123@santhosh.uikqcvl.mongodb.net/ecommerce?retryWrites=true&w=majority'
-mongo = PyMongo(app)
+# Initialize MongoDB client
+client = MongoClient('mongodb+srv://santhoshsmothy:mongodb123@santhosh.uikqcvl.mongodb.net/?retryWrites=true&w=majority&connectTimeoutMS=30000&socketTimeoutMS=30000')
+db = client['ecommerce']
+products_collection = db['products']
+cart_collection = db['cart']
 
 # Dummy product data for initial setup
 dummy_products = [
@@ -39,31 +41,21 @@ dummy_products = [
     }
 ]
 
-# Flag to ensure initialization happens only once
-initialized = False
-
-# Function to initialize data in MongoDB (called on first request)
-def initialize_data():
-    global initialized
-    if not initialized:
-        products_collection = mongo.db.products
-        if products_collection.count_documents({}) == 0:
-            products_collection.insert_many(dummy_products)
-        initialized = True
+# Populate initial data if collection is empty
+if products_collection.count_documents({}) == 0:
+    products_collection.insert_many(dummy_products)
 
 # Routes
 @app.route('/api/products', methods=['GET'])
 def get_products():
-    initialize_data()  # Ensure data is initialized before processing request
-    products = list(mongo.db.products.find({}, {'_id': 1, 'img_link': 1, 'title': 1, 'description': 1, 'price': 1}))
+    products = list(products_collection.find({}, {'_id': 1, 'img_link': 1, 'title': 1, 'description': 1, 'price': 1}))
     for product in products:
         product['_id'] = str(product['_id'])
     return jsonify({'products': products}), 200
 
 @app.route('/api/cart', methods=['GET'])
 def get_cart():
-    initialize_data()  # Ensure data is initialized before processing request
-    cart_items = list(mongo.db.cart.find())
+    cart_items = list(cart_collection.find())
     
     for item in cart_items:
         item['_id'] = str(item['_id'])
@@ -76,11 +68,17 @@ def get_cart():
 def add_to_cart():
     try:
         data = request.get_json()
+        print(data)
         title = data.get('title')
         price = data.get('price')
         img_link = data.get('imglink')
         
-        mongo.db.cart.insert_one({'title': title, 'price': price, 'img_link': img_link})
+        # if not product_id:
+        #     return jsonify({"error": "No product ID provided"}), 400
+        # product = products_collection.find_one({"_id": ObjectId(product_id)})
+        # if not product:
+        #     return jsonify({"error": "Product not found"}), 404
+        cart_collection.insert_one({'title': title,'price': price,'img_link': img_link})
         return jsonify({"message": "Product added to cart successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -88,10 +86,10 @@ def add_to_cart():
 @app.route('/api/cart/<string:product_id>', methods=['DELETE'])
 def remove_from_cart(product_id):
     try:
-        mongo.db.cart.delete_one({"_id": ObjectId(product_id)})
+        cart_collection.delete_one({"_id": ObjectId(product_id)})
         return jsonify({"message": "Product removed from cart successfully."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)
+    app.run(debug=True)
