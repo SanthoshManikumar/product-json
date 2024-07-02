@@ -7,11 +7,9 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 CORS(app)
 
-# Initialize PyMongo with connection pooling and URI
+# Initialize PyMongo
 app.config["MONGO_URI"] = 'mongodb+srv://santhoshsmothy:mongodb123@santhosh.uikqcvl.mongodb.net/ecommerce?retryWrites=true&w=majority'
 mongo = PyMongo(app)
-
-# Ensure indexes and collections
 products_collection = mongo.db.products
 cart_collection = mongo.db.cart
 
@@ -44,10 +42,8 @@ dummy_products = [
 ]
 
 # Populate initial data if collection is empty
-@app.before_first_request
-def before_first_request_func():
-    if products_collection.count_documents({}) == 0:
-        products_collection.insert_many(dummy_products)
+if products_collection.count_documents({}) == 0:
+    products_collection.insert_many(dummy_products)
 
 # Routes
 @app.route('/api/products', methods=['GET'])
