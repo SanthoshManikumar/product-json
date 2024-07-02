@@ -8,7 +8,7 @@ app.secret_key = 'your_secret_key'
 CORS(app)
 
 # Initialize MongoDB client
-client = MongoClient('mongodb+srv://santhoshsmothy:mongodb123@santhosh.uikqcvl.mongodb.net/?retryWrites=true&w=majority&connectTimeoutMS=30000&socketTimeoutMS=30000')
+client = MongoClient('mongodb+srv://santhoshsmothy:mongodb123@santhosh.uikqcvl.mongodb.net/?retryWrites=true&w=majority')
 db = client['ecommerce']
 products_collection = db['products']
 cart_collection = db['cart']
