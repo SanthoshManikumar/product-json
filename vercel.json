@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "api": {
+      "handler": "app.handler",
+      "runtime": "python3.9"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/app"
+    }
+  ]
+}
